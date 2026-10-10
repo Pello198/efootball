@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixtures - Tournament Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1>🏆 Tournament Manager</h1>
+            </div>
+            <nav class="navigation">
+                <a href="index.html" class="nav-link">Tournament</a>
+                <a href="fixtures.html" class="nav-link active">Fixtures</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="card fixtures-header" id="fixturesHeader">
+            <div class="tournament-title-container">
+                <h2 id="fixtureTournamentName">Tournament</h2>
+                <span class="status-badge" id="fixtureTournamentStatus">Loading...</span>
+            </div>
+            <div class="fixture-page-actions">
+                <a href="index.html" class="btn btn-secondary">Back to Tournament</a>
+            </div>
+        </section>
+
+        <section class="card group-stage-section" id="groupStageSection">
+            <div class="section-header">
+                <h2>Group Fixtures</h2>
+            </div>
+            <div class="group-selector" id="groupSelector"></div>
+            <div class="fixtures-container" id="groupFixturesContainer">
+                <p class="empty-message">Loading group fixtures...</p>
+            </div>
+        </section>
+
+        <section class="card standings-section" id="standingsSection">
+            <div class="section-header">
+                <h2>Group Standings</h2>
+            </div>
+            <div class="standings-container" id="standingsContainer">
+                <p class="empty-message">Loading standings...</p>
+            </div>
+        </section>
+
+        <section class="card proceed-section" id="proceedKnockoutSection">
+            <div class="section-header">
+                <h2>Knockout Stage</h2>
+            </div>
+            <p class="section-description">Once the group stage is complete, qualified players will proceed to the knockout stage.</p>
+            <button type="button" id="proceedKnockoutButton" class="button primary-button" disabled>Proceed to Knockout</button>
+        </section>
+
+        <section class="card knockout-stage-section hidden" id="knockoutStageSection">
+            <div class="section-header">
+                <h2>Knockout Fixtures</h2>
+            </div>
+            <div class="knockout-container" id="knockoutFixturesContainer">
+                <p class="empty-message">No knockout fixtures yet.</p>
+            </div>
+        </section>
+
+        <section class="card tournament-complete-section hidden" id="tournamentCompleteSection">
+            <div class="champion-container">
+                <div class="trophy">🏆</div>
+                <h2>Tournament Completed</h2>
+                <p class="champion-label">Champion</p>
+                <h1 id="championName">-</h1>
+            </div>
+        </section>
+
+        <div class="modal hidden" id="resultModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="resultModalTitle">Enter Match Result</h2>
+                    <button type="button" class="modal-close" id="closeResultModal">&times;</button>
+                </div>
+                <form id="resultForm">
+                    <input type="hidden" id="resultFixtureId">
+                    <div class="match-result-inputs">
+                        <div class="result-player">
+                            <span class="player-name" id="resultPlayer1Name">Player 1</span>
+                            <input type="number" id="player1Score" min="0" required>
+                        </div>
+                        <span class="score-separator">-</span>
+                        <div class="result-player">
+                            <span class="player-name" id="resultPlayer2Name">Player 2</span>
+                            <input type="number" id="player2Score" min="0" required>
+                        </div>
+                    </div>
+                    <div class="penalty-section hidden" id="penaltySection">
+                        <label for="penaltyWinner">Penalty Winner (only required if scores are equal)</label>
+                        <select id="penaltyWinner">
+                            <option value="">Select winner</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="cancelResultButton" class="button secondary-button">Cancel</button>
+                        <button type="submit" id="submitResultButton" class="button primary-button">Submit Result</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="messageContainer" class="message-container"></div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/fixtures.js"></script>
+</body>
+</html>

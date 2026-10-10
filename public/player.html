@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Profile | Tournament Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1>🏆 Tournament Manager</h1>
+            </div>
+            <nav class="navigation">
+                <a href="index.html" class="nav-link">Tournament</a>
+                <a href="fixtures.html" class="nav-link">Fixtures</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="back-container">
+            <button type="button" id="backButton" class="button secondary-button">&larr; Back</button>
+        </div>
+
+        <section class="card player-header" id="playerHeader">
+            <div class="player-profile-info">
+                <div class="player-avatar">
+                    <span id="playerInitial">P</span>
+                </div>
+                <div class="player-details">
+                    <h1 id="playerName">Loading...</h1>
+                    <p>Team: <strong id="playerTeamName" style="color: #007bff;">-</strong></p>
+                    <p>Number:<a href="#" id="playerWhatsappLink" target="_blank" rel="noopener noreferrer"><span id="playerNumber">-</span></a></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top: 20px;">
+            <div class="section-header">
+                <h2>Tournaments Participated</h2>
+            </div>
+            <div id="tournamentTabs" class="tabs-container" style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;"></div>
+            <div id="tournamentProgressionContainer" class="progression-box" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+                <p class="empty-message">Select a tournament to view progression.</p>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top: 20px;">
+            <div class="section-header">
+                <h2>Overall Career Stats</h2>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card" data-filter="TOTAL_TOURNAMENTS">
+                    <span class="stat-label">Tournaments</span>
+                    <span class="stat-value" id="totalTournaments">0</span>
+                </div>
+                <div class="stat-card clickable-stat" data-filter="SCHEDULED">
+                    <span class="stat-label">Scheduled Games</span>
+                    <span class="stat-value" id="overallScheduledGames">0</span>
+                </div>
+                <div class="stat-card clickable-stat" data-filter="PLAYED">
+                    <span class="stat-label">Games Played</span>
+                    <span class="stat-value" id="overallGamesPlayed">0</span>
+                </div>
+                <div class="stat-card clickable-stat" data-filter="CANCELLED">
+                    <span class="stat-label">Cancelled Games</span>
+                    <span class="stat-value" id="overallCancelledGames">0</span>
+                </div>
+                <div class="stat-card clickable-stat" data-filter="WINS">
+                    <span class="stat-label">Wins</span>
+                    <span class="stat-value" id="overallWins">0</span>
+                </div>
+                <div class="stat-card clickable-stat" data-filter="DRAWS">
+                    <span class="stat-label">Draws</span>
+                    <span class="stat-value" id="overallDraws">0</span>
+                </div>
+                <div class="stat-card clickable-stat" data-filter="LOSSES">
+                    <span class="stat-label">Losses</span>
+                    <span class="stat-value" id="overallLosses">0</span>
+                </div>
+                <div class="stat-card non-clickable">
+                    <span class="stat-label">Goals For</span>
+                    <span class="stat-value" id="overallGoalsFor">0</span>
+                </div>
+                <div class="stat-card non-clickable">
+                    <span class="stat-label">Goals Against</span>
+                    <span class="stat-value" id="overallGoalsAgainst">0</span>
+                </div>
+                <div class="stat-card non-clickable">
+                    <span class="stat-label">Goal Difference</span>
+                    <span class="stat-value" id="overallGoalDifference">0</span>
+                </div>
+                <div class="stat-card non-clickable">
+                    <span class="stat-label">Total Points</span>
+                    <span class="stat-value" id="overallPoints">0</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card match-history-section" style="margin-top: 20px;">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="matchListHeader">Match List (All)</h2>
+                <button type="button" id="resetFilterBtn" class="button" style="display: none;">Reset Filter</button>
+            </div>
+            <div class="match-history-container" id="overallMatchHistory">
+                <p class="empty-message">Loading match history...</p>
+            </div>
+        </section>
+
+        <div id="messageContainer" class="message-container"></div>
+    </main>
+
+    <script src="js/player.js"></script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Manager</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <h1>🏆 Tournament Manager</h1>
+            </div>
+            <nav class="navigation">
+                <a href="index.html" class="nav-link">Tournament</a>
+                <a href="fixtures.html" class="nav-link">Fixtures</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="card tournament-section" id="tournamentSection">
+            <div class="section-header">
+                <h2>Tournament Information</h2>
+            </div>
+            <form id="createTournamentForm" class="form">
+                <div class="form-group">
+                    <label for="tournamentName">Tournament Name</label>
+                    <input type="text" id="tournamentName" name="tournamentName" placeholder="Enter tournament name" required>
+                </div>
+                <div class="form-group">
+                    <label for="maxPlayers">Maximum Players</label>
+                    <input type="number" id="maxPlayers" name="maxPlayers" placeholder="Enter maximum players" min="2" required>
+                </div>
+                <button type="submit" id="createTournamentButton" class="button primary-button">Create Tournament</button>
+            </form>
+
+            <section class="card">
+                <div class="section-header">
+                    <h2>All Tournaments</h2>
+                </div>
+                <div id="tournamentsList">Loading tournaments...</div>
+            </section>
+
+            <section class="card">
+                <div class="section-header">
+                    <h2>Available Players</h2>
+                </div>
+                <div id="availablePlayersList">Loading players...</div>
+            </section>
+
+            <div class="tournament-details hidden" id="tournamentDetails">
+                <div class="info-row">
+                    <span class="info-label">Tournament:</span>
+                    <span class="info-value" id="displayTournamentName">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Maximum Players:</span>
+                    <span class="info-value" id="displayMaxPlayers">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Registered Players:</span>
+                    <span class="info-value" id="displayRegisteredPlayers">0</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tournament Status:</span>
+                    <span class="status-badge" id="displayTournamentStatus">Registration</span>
+                </div>
+                <div class="tournament-actions">
+                    <a href="fixtures.html" id="viewFixturesButton" class="btn btn-secondary">View Fixtures</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="card register-player-section" id="registerPlayerSection">
+            <div class="section-header">
+                <h2>Register Player</h2>
+            </div>
+            <form id="registerPlayerForm" class="form">
+                <div class="form-group">
+                    <label for="playerUsername">Username</label>
+                    <input type="text" id="playerUsername" name="playerUsername" placeholder="Enter player username" required>
+                </div>
+                <div class="form-group">
+                    <label for="playerNumber">Number</label>
+                    <input type="text" id="playerNumber" name="playerNumber" placeholder="Enter phone or player number">
+                </div>
+                <button type="submit" id="registerPlayerButton" class="button">Register Player</button>
+            </form>
+        </section>
+
+        <section class="card players-section" id="playersSection">
+            <div class="section-header">
+                <h2>Registered Players</h2>
+                <span class="player-count" id="playerCount">0 Players</span>
+            </div>
+            <div class="table-container" id="playersTableContainer">
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Number</th>
+                            <th>Profile</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersTableBody">
+                        <tr>
+                            <td colspan="4" class="empty-message">No players registered yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card start-section" id="startTournamentSection">
+            <div class="section-header">
+                <h2>Start Tournament</h2>
+            </div>
+            <p class="section-description">Once the tournament starts, players will be grouped and fixtures will be generated.</p>
+            <button type="button" id="startTournamentButton" class="button start-button">Start Tournament</button>
+        </section>
+
+        <div id="messageContainer" class="message-container"></div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/tournament.js"></script>
+</body>
+</html>
