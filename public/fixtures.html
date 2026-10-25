@@ -7,30 +7,20 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header class="header">
-        <div class="header-container">
-            <div class="logo">
-                <h1>🏆 Tournament Manager</h1>
-            </div>
-            <nav class="navigation">
-                <a href="index.html" class="nav-link">Tournament</a>
-                <a href="fixtures.html" class="nav-link active">Fixtures</a>
-            </nav>
-        </div>
-    </header>
+    <div id="header-placeholder"></div>
 
     <main class="main-container">
-        <section class="card fixtures-header" id="fixturesHeader">
+        <section class="card " id="fixturesHeader">
             <div class="tournament-title-container">
                 <h2 id="fixtureTournamentName">Tournament</h2>
-                <span class="status-badge" id="fixtureTournamentStatus">Loading...</span>
+                <span class="badge" id="fixtureTournamentStatus">Loading...</span>
             </div>
-            <div class="fixture-page-actions">
+            <div >
                 <a href="index.html" class="btn btn-secondary">Back to Tournament</a>
             </div>
         </section>
 
-        <section class="card group-stage-section" id="groupStageSection">
+        <section class="card " id="groupStageSection">
             <div class="section-header">
                 <h2>Group Fixtures</h2>
             </div>
@@ -68,10 +58,10 @@
 
         <section class="card tournament-complete-section hidden" id="tournamentCompleteSection">
             <div class="champion-container">
-                <div class="trophy">🏆</div>
-                <h2>Tournament Completed</h2>
+                
+                <h2><span class="trophy">🏆</span>Tournament Completed</h2>
                 <p class="champion-label">Champion</p>
-                <h1 id="championName">-</h1>
+                <h1 id="championName" style="color: var(--success);">-</h1>
             </div>
         </section>
 
@@ -94,11 +84,17 @@
                             <input type="number" id="player2Score" min="0" required>
                         </div>
                     </div>
+    
                     <div class="penalty-section hidden" id="penaltySection">
                         <label for="penaltyWinner">Penalty Winner (only required if scores are equal)</label>
                         <select id="penaltyWinner">
                             <option value="">Select winner</option>
                         </select>
+                    </div>
+                    <!-- Inside your resultForm in fixtures.html -->
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="matchScreenshot">Result Screenshot (Optional)</label>
+                        <input type="file" id="matchScreenshot" accept="image/*">
                     </div>
                     <div class="modal-actions">
                         <button type="button" id="cancelResultButton" class="button secondary-button">Cancel</button>
@@ -109,6 +105,37 @@
         </div>
 
         <div id="messageContainer" class="message-container"></div>
+        <!-- Admin Override Modal -->
+<div class="modal hidden" id="adminOverrideModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Admin Score Correction</h2>
+            <button type="button" class="modal-close" id="closeAdminModal">&times;</button>
+        </div>
+        <form id="adminOverrideForm">
+            <input type="hidden" id="adminFixtureCode">
+            <div class="match-result-inputs">
+                <div class="result-player">
+                    <span class="player-name" id="adminPlayer1Name">Player 1</span>
+                    <input type="number" id="adminPlayer1Score" min="0" required>
+                </div>
+                <span class="score-separator">-</span>
+                <div class="result-player">
+                    <span class="player-name" id="adminPlayer2Name">Player 2</span>
+                    <input type="number" id="adminPlayer2Score" min="0" required>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="adminMatchScreenshot">Correction Screenshot (Optional)</label>
+                <input type="file" id="adminMatchScreenshot" accept="image/*">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="cancelAdminButton" class="button secondary-button">Cancel</button>
+                <button type="submit" class="button btn-danger">Override Result</button>
+            </div>
+        </form>
+    </div>
+</div>
     </main>
 
     <script src="js/api.js"></script>

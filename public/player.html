@@ -7,24 +7,15 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header class="header">
-        <div class="header-container">
-            <div class="logo">
-                <h1>🏆 Tournament Manager</h1>
-            </div>
-            <nav class="navigation">
-                <a href="index.html" class="nav-link">Tournament</a>
-                <a href="fixtures.html" class="nav-link">Fixtures</a>
-            </nav>
-        </div>
-    </header>
+    <div id="header-placeholder"></div>
 
     <main class="main-container">
-        <div class="back-container">
+        <section >
+        <div class="tournament-actions">
             <button type="button" id="backButton" class="button secondary-button">&larr; Back</button>
-        </div>
+        </div></section>
 
-        <section class="card player-header" id="playerHeader">
+        <section class="card " id="playerHeader">
             <div class="player-profile-info">
                 <div class="player-avatar">
                     <span id="playerInitial">P</span>
@@ -32,7 +23,10 @@
                 <div class="player-details">
                     <h1 id="playerName">Loading...</h1>
                     <p>Team: <strong id="playerTeamName" style="color: #007bff;">-</strong></p>
-                    <p>Number:<a href="#" id="playerWhatsappLink" target="_blank" rel="noopener noreferrer"><span id="playerNumber">-</span></a></p>
+                    
+                    <a href="#" id="playerWhatsappLink" target="_blank" rel="noopener noreferrer" class="button" style="display: none; align-items: center; gap: 6px; background: #25D366; color: white; padding: 4px 10px; font-size: 0.85rem; text-decoration: none; border-radius: 6px;">
+                    Chat on WhatsApp
+                </a></p>
                 </div>
             </div>
         </section>
@@ -51,13 +45,25 @@
             <div class="section-header">
                 <h2>Overall Career Stats</h2>
             </div>
+            <section class="card" style="margin-top: 20px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: flex-start; align-items: center; flex-wrap: wrap; gap: 10px;">
+                
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="tournamentSelect" style="font-weight: 600; font-size: 0.9rem;">Select Tournament:</label>
+                        <select id="tournamentSelect" class="input-field" style="padding: 10px 12px; font-size: 0.9rem; min-width: 200px;">
+                            <option value="ALL">All Tournaments (Career Total)</option>
+                        </select>
+                    </div>
+                </div>
+    
+            </section>
             <div class="stats-grid">
-                <div class="stat-card" data-filter="TOTAL_TOURNAMENTS">
+                <div class="stat-card non-clickable" data-filter="TOTAL_TOURNAMENTS">
                     <span class="stat-label">Tournaments</span>
                     <span class="stat-value" id="totalTournaments">0</span>
                 </div>
                 <div class="stat-card clickable-stat" data-filter="SCHEDULED">
-                    <span class="stat-label">Scheduled Games</span>
+                    <span class="stat-label">Scheduled Games(Remaining)</span>
                     <span class="stat-value" id="overallScheduledGames">0</span>
                 </div>
                 <div class="stat-card clickable-stat" data-filter="PLAYED">
@@ -110,8 +116,9 @@
         </section>
 
         <div id="messageContainer" class="message-container"></div>
+        </section>
     </main>
-
+    <script src="js/api.js"></script>
     <script src="js/player.js"></script>
 </body>
 </html>

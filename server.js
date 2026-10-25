@@ -1,12 +1,15 @@
+require ("dotenv").config();
 const express = require("express");
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 const tournamentRoutes = require("./routes/tournamentRoutes");
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+const upload = multer({ storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, path.join(__dirname, 'public/uploads/')),
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+})});
+app.use(cors(), express.json(), express.static(path.join(__dirname, "public")));
 app.use("/tournaments", tournamentRoutes);
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
-});
+const PORT= process.env.PORT;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

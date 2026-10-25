@@ -1,15 +1,17 @@
 // ==========================================
 // PLAYER PROFILE JS
 // ==========================================
-const API_BASE = "http://localhost:3000";
+
 let allPlayerMatches = [];
 let allTournaments = [];
 let activeFilter = "ALL";
+let selectedTournamentId = "ALL";
 
 window.addEventListener("DOMContentLoaded", async () => {
     setupNavigation();
     setupStatClickFilters();
     await initPlayerPage();
+ 
 });
 
 function getPageParams() {
@@ -36,7 +38,7 @@ async function initPlayerPage() {
 async function loadAllPlayerData(playerId, tournamentId) {
     showLoading();
     try {
-        const fetchUrl = `${API_BASE}/tournaments/players/${playerId}/stats`;
+        const fetchUrl = `${API_URL}/players/${playerId}/stats`;
         const response = await fetch(fetchUrl);
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || "Failed to load player details");
@@ -60,14 +62,15 @@ async function loadAllPlayerData(playerId, tournamentId) {
             // 4. Update the link URL using the universal wa.me format
             if (whatsappLinkElem) {
                 whatsappLinkElem.href = `https://wa.me/${cleanNumber}?text=${message}`;
-                whatsappLinkElem.style.pointerEvents = "auto"; // Ensure it is clickable
+                whatsappLinkElem.style.display="inline-flex";// Ensure it is clickable
             }
+
         } else {
             // Handle the case where no number is assigned
             setText("playerNumber", "Unassigned");
             if (whatsappLinkElem) {
                 whatsappLinkElem.removeAttribute("href"); // Remove link behavior if empty
-                whatsappLinkElem.style.pointerEvents = "none";
+                whatsappLinkElem.style.display = "none";
             }
         }
 
@@ -92,13 +95,78 @@ async function loadAllPlayerData(playerId, tournamentId) {
             setText("overallGoalDifference", data.stats.goalDifference || 0);
             setText("overallPoints", data.stats.points || 0);
         }
+        populateTournamentDropdown(allTournaments, tournamentId);
 
         renderTournamentTabs(allTournaments);
+        renderTournamentTabs(allTournaments);
         renderGroupedMatches("ALL");
+        updateViewForTournament(selectedTournamentId);
     } catch (error) {
         console.error("Error loading player data:", error);
         showPlayerError(error.message);
     }
+}
+function populateTournamentDropdown(tournaments, defaultTournamentId) {
+    const selectElem = document.getElementById("tournamentSelect");
+    if (!selectElem) return;
+
+    selectElem.innerHTML = `<option value="ALL">All Tournaments (Career Total)</option>` +
+        tournaments.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join("");
+
+    if (defaultTournamentId && tournaments.some(t => String(t.id) === String(defaultTournamentId))) {
+        selectedTournamentId = String(defaultTournamentId);
+        selectElem.value = selectedTournamentId;
+    } else {
+        selectedTournamentId = "ALL";
+        selectElem.value = "ALL";
+    }
+
+    selectElem.addEventListener("change", (e) => {
+        selectedTournamentId = e.target.value;
+        updateViewForTournament(selectedTournamentId);
+    });
+}
+
+function updateViewForTournament(tId) {
+    let matchesToAnalyze = allPlayerMatches;
+    if (tId !== "ALL") {
+        matchesToAnalyze = allPlayerMatches.filter(m => String(m.tournamentId || m.tournament_id) === String(tId));
+    }
+
+    // Recalculate stats dynamically for the selected scope
+    const stats = calculateLocalStats(matchesToAnalyze, localStorage.getItem("currentPlayerId"));
+
+    setText("totalTournaments", tId === "ALL" ? allTournaments.length : 1);
+    setText("overallScheduledGames", stats.scheduledGames);
+    setText("overallGamesPlayed", stats.gamesPlayed);
+    setText("overallCancelledGames", stats.cancelledGames);
+    setText("overallWins", stats.wins);
+    setText("overallDraws", stats.draws);
+    setText("overallLosses", stats.losses);
+    setText("overallGoalsFor", stats.goalsFor);
+    setText("overallGoalsAgainst", stats.goalsAgainst);
+    setText("overallGoalDifference", stats.goalDifference);
+    setText("overallPoints", stats.points);
+
+    renderGroupedMatches(activeFilter);
+}
+
+function calculateLocalStats(matches, playerId) {
+    const s = { scheduledGames: 0, gamesPlayed: 0, cancelledGames: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0, goalDifference: 0, points: 0 };
+    for (const m of matches) {
+        if (m.status === "CANCELLED" || m.status === "cancelled") { s.cancelledGames++; continue; }
+        if (m.status === "SCHEDULED" || m.status === "scheduled" || m.goalsFor === null || m.goalsFor === undefined) { s.scheduledGames++; continue; }
+        s.gamesPlayed++;
+        const gFor = m.goalsFor ?? 0;
+        const gAg = m.goalsAgainst ?? 0;
+        s.goalsFor += gFor;
+        s.goalsAgainst += gAg;
+        if (gFor > gAg) { s.wins++; s.points += 3; }
+        else if (gFor === gAg) { s.draws++; s.points += 1; }
+        else { s.losses++; }
+    }
+    s.goalDifference = s.goalsFor - s.goalsAgainst;
+    return s;
 }
 
 // TOURNAMENT PROGRESSION TABS
@@ -151,11 +219,11 @@ function displayTournamentProgression(tournament) {
         <div style="margin-top: 10px;">
             <strong>Group Stage Matches:</strong>
             ${groupMatches.length ? `
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 6px;">
                     ${groupMatches.map(m => `
-                        <span style="padding: 4px 8px; border-radius: 4px; background: #e9ecef; font-size: 0.85rem;">
+                        <button type="button" class="button secondary-button" style="padding: 10px; font-size: 0.85rem; cursor: pointer;" onclick="jumpToMatch('${m.id || m.fixture_code}', '${tournament.id}')">
                             vs ${escapeHtml(m.opponent)} (${m.score || m.status})
-                        </span>
+                        </button>
                     `).join("")}
                 </div>
             ` : '<p style="font-size: 0.85rem; color: #6c757d;">No group stage matches recorded.</p>'}
@@ -163,11 +231,11 @@ function displayTournamentProgression(tournament) {
         <div style="margin-top: 12px;">
             <strong>Knockout Stage Matches:</strong>
             ${knockoutMatches.length ? `
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
                     ${knockoutMatches.map(m => `
-                        <span style="padding: 4px 8px; border-radius: 4px; background: #d1e7dd; font-size: 0.85rem;">
+                        <button type="button" class="button secondary-button" style="padding: 10px; font-size: 0.85rem; background: #d1e7dd; border-color: #badbcc; cursor: pointer;" onclick="jumpToMatch('${m.id || m.fixture_code}', '${tournament.id}')">
                             ${escapeHtml(m.roundName || 'Knockout')}: vs ${escapeHtml(m.opponent)} (${m.score || m.status})
-                        </span>
+                        </button>
                     `).join("")}
                 </div>
             ` : '<p style="font-size: 0.85rem; color: #6c757d;">Did not reach or play knockout matches.</p>'}
@@ -175,18 +243,156 @@ function displayTournamentProgression(tournament) {
     `;
 }
 
+// JUMP TO SPECIFIC MATCH AND HIGHLIGHT IT
+function jumpToMatch(matchId, tournamentId) {
+    // 1. Switch tournament tab button if needed
+    const tabBtns = document.querySelectorAll(".t-tab-btn");
+    tabBtns.forEach(btn => {
+        if (btn.getAttribute("data-tid") === String(tournamentId)) {
+            btn.click();
+        }
+    });
+
+    // 2. Find and highlight the match card in the history view
+    setTimeout(() => {
+        const matchCard = document.getElementById(`match-card-${matchId}`);
+        if (matchCard) {
+            matchCard.scrollIntoView({ behavior: "smooth", block: "center" });
+            matchCard.style.transition = "all 0.4s ease-in-out";
+            matchCard.style.border = "2px solid #007bff";
+            matchCard.style.backgroundColor = "#e7f1ff";
+            matchCard.style.boxShadow = "0 0 12px rgba(0, 123, 255, 0.4)";
+
+            setTimeout(() => {
+                matchCard.style.border = "1px solid #e0e0e0";
+                matchCard.style.backgroundColor = "#fff";
+                matchCard.style.boxShadow = "none";
+            }, 2500);
+        } else {
+            showMessage("Match card not found in current view filter.", "error");
+        }
+    }, 100);
+}
+window.jumpToMatch = jumpToMatch;
+
+// MATCH CARD RENDERER WITH SCREENSHOT OR "NO SCREENSHOT" MESSAGE
+// MATCH CARD RENDERER WITH 3-COLUMN LAYOUT AND ACCURATE SCREENSHOT PATHS
+function createMatchCard(match) {
+    let resultClass = "badge-group";
+    let statusText = match.result || match.status || "To Be Determined";
+
+    if (match.status === "PLAYED" || match.status === "completed") {
+        resultClass = match.result === "WIN" ? "badge-completed" : match.result === "LOSS" ? "badge-danger" : "badge-registration";
+    } else if (match.status === "CANCELLED") {
+        resultClass = "badge-danger";
+        statusText = "Cancelled";
+    } else if (match.status === "SCHEDULED" || !match.status || match.status === "PENDING") {
+        resultClass = "badge-group";
+        statusText = "Scheduled";
+    }
+
+    const matchKey = match.id || match.fixture_code;
+    let screenshotPath = match.result_screenshot || match.screenshot;
+    
+    // Clean up screenshot path format if stored with or without leading slashes
+    if (screenshotPath) {
+        if (!screenshotPath.startsWith('/') && !screenshotPath.startsWith('http')) {
+            screenshotPath = '/' + screenshotPath;
+        }
+        if (!screenshotPath.startsWith('http')) {
+            screenshotPath = `http://localhost:3000${screenshotPath}`;
+        }
+    }
+
+    const scoreDisplay = match.score || (match.player_1_score !== null && match.player_2_score !== null && match.status !== "SCHEDULED" ? `${match.player_1_score} - ${match.player_2_score}` : 'TBD');
+
+    return `
+        <div id="match-card-${matchKey}" class="fixture-card" style="margin-bottom: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff;">
+            <div class="fixture-meta" style="margin-bottom: 8px;">
+                <span style="font-size: 0.85rem; color: #666;">${formatStage(match.stage)} ${match.roundName ? `• ${escapeHtml(match.roundName)}` : match.round_number ? `• Round ${match.round_number}` : ''}</span>
+            </div>
+            
+            <!-- 3-Column Layout: Left (Opponent), Middle (Score), Right (Status Badge) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px;">
+                <div style="flex: 1; text-align: left;">
+                    <span class="fixture-player" style="font-size: 1rem;">vs <strong>${escapeHtml(match.opponent || match.player_2_name || 'TBD')}</strong></span>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <span class="vs" style="font-weight: bold; font-size: 1.1rem; color: #333;">${scoreDisplay}</span>
+                </div>
+                <div style="flex: 1; text-align: right;">
+                    <span class="badge ${resultClass}" style="font-size: 0.85rem; padding: 4px 10px;">${statusText}</span>
+                </div>
+            </div>
+            ${renderOverrideHistoryHTML(match.overrides)}
+            <!-- Screenshot Section -->
+            <div style="border-top: 1px solid #eee; padding-top: 10px; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 0.8rem; color: #555; font-weight: 500;">Screenshot Proof:</span>
+                ${screenshotPath ? `
+                    <img src="${screenshotPath}" 
+                         alt="Match Screenshot" 
+                         style="max-width: 100px; max-height: 60px; border-radius: 4px; cursor: pointer; border: 1px solid #ccc; object-fit: cover;"
+                         onclick="openScreenshotModal('${screenshotPath}')" />
+                ` : `
+                    <span style="font-size: 0.8rem; color: #999; font-style: italic;">No screenshot available</span>
+                `}
+            </div>
+        </div>
+    `;
+}
+
+// FULLSCREEN SCREENSHOT MODAL VIEWER
+function openScreenshotModal(imgUrl) {
+    let modal = document.getElementById("playerScreenshotModal");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "playerScreenshotModal";
+        modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 9999; cursor: pointer;";
+        modal.innerHTML = `
+            <div style="position: relative; max-width: 90%; max-height: 90%; text-align: center;" onclick="event.stopPropagation()">
+                <img id="modalScreenshotImg" src="" style="max-width: 100%; max-height: 85vh; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);" />
+                <button type="button" onclick="document.getElementById('playerScreenshotModal').style.display='none'" style="position: absolute; top: -15px; right: -15px; background: #ff4d4f; color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; font-weight: bold; cursor: pointer; font-size: 1rem;">&times;</button>
+            </div>
+        `;
+        modal.addEventListener("click", () => modal.style.display = "none");
+        document.body.appendChild(modal);
+    }
+    document.getElementById("modalScreenshotImg").src = imgUrl;
+    modal.style.display = "flex";
+}
+window.openScreenshotModal = openScreenshotModal;
+
+
+
 // CLICKABLE STAT FILTERS
 function setupStatClickFilters() {
     const cards = document.querySelectorAll(".stat-card.clickable-stat");
+    const staticCards=document.querySelectorAll(".stat-card.non-clickable");
     const resetBtn = document.getElementById("resetFilterBtn");
     cards.forEach(card => {
         card.style.cursor = "pointer";
         card.addEventListener("click", () => {
             cards.forEach(c => c.style.border = "1px solid #e0e0e0");
             card.style.border = "2px solid #007bff";
+          
             activeFilter = card.getAttribute("data-filter");
             renderGroupedMatches(activeFilter);
             if (resetBtn) resetBtn.style.display = "inline-block";
+            const matchSection = document.getElementById("matchListHeader");
+            if (matchSection) {
+                matchSection.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        });
+    });
+    staticCards.forEach(card => {
+        card.style.cursor = "pointer";
+        card.addEventListener("click", () => {
+            card.style.transition = "border 0.2s ease";
+            card.style.border = "2px solid #007bff";
+
+            setTimeout(() => {
+                card.style.border = "1px solid #e0e0e0";
+            }, 600); // Fades back to normal after 0.6 seconds
         });
     });
 
@@ -263,37 +469,9 @@ function renderGroupedMatches(filterType) {
     `).join("");
 }
 
-function createMatchCard(match) {
-    let resultClass = "badge-group";
-    if (match.status === "PLAYED") {
-        resultClass = match.result === "WIN" ? "badge-completed" : match.result === "LOSS" ? "badge-danger" : "badge-registration";
-    } else if (match.status === "CANCELLED") {
-        resultClass = "badge-danger";
-    }
-    return `
-        <div class="fixture-card" style="margin-bottom: 10px;">
-            <div class="fixture-meta">
-                <span>${formatStage(match.stage)} ${match.roundName ? `• ${escapeHtml(match.roundName)}` : ''}</span>
-                <span class="badge ${resultClass}">${match.result || match.status}</span>
-            </div>
-            <div class="fixture-players">
-                <span class="fixture-player">vs <strong>${escapeHtml(match.opponent || 'TBD')}</strong></span>
-                <span class="vs">${match.score || 'VS'}</span>
-            </div>
-        </div>
-    `;
-}
 
-// HELPERS & NAVIGATION
-function setupNavigation() {
-    const backButton = document.getElementById("backButton");
-    if (backButton) {
-        backButton.addEventListener("click", () => {
-            if (document.referrer) window.history.back();
-            else window.location.href = "index.html";
-        });
-    }
-}
+
+
 
 function formatStage(stage) {
     if (!stage) return "N/A";
@@ -316,10 +494,3 @@ function setText(id, val) {
     if (elem) elem.textContent = val;
 }
 
-function escapeHtml(str) {
-    if (!str) return "";
-    return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-}

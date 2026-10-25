@@ -2,279 +2,77 @@ const GroupStage = require("./groupStage");
 const KnockoutManager = require("./knockoutStage");
 class TournamentManager {
     constructor(playersNumber) {
-        if (
-            !Number.isInteger(playersNumber) ||
-            playersNumber < 2
-        ) {
-            throw new Error(
-                "The tournament must have at least 2 players."
-            );
-        }
+        if (!Number.isInteger(playersNumber) || playersNumber < 2) throw new Error("The tournament must have at least 2 players.");
         this.playersNumber = playersNumber;
-        this.status = null;
+        this.status = playersNumber <= 8 ? "KNOCKOUT_STAGE" : "GROUP_STAGE";
         this.groupMap = null;
         this.groupStage = null;
         this.knockoutStage = null;
-        /*
-         * Determine how many players qualify
-         * from the group stage.
-         */
-        this.advanceCount =
-            this.getAdvanceCount(playersNumber);
-        if (playersNumber <= 8) {
-            this.status = "KNOCKOUT_STAGE";
-        } else {
-            this.status = "GROUP_STAGE";
-        }
+        this.advanceCount = this.getAdvanceCount(playersNumber);
     }
-    getAdvanceCount(totalPlayers) {
-        if (totalPlayers >= 33) {
-            return 32;
-        }
-        if (totalPlayers >= 17) {
-            return 16;
-        }
-        if (totalPlayers >= 9) {
-            return 8;
-        }
-        if (totalPlayers >= 5) {
-            return 4;
-        }
-        if (totalPlayers >= 3) {
-            return 2;
-        }
-        return 1;
+    getAdvanceCount(total) {
+        return total >= 33 ? 32 : total >= 17 ? 16 : total >= 9 ? 8 : total >= 5 ? 4 : total >= 3 ? 2 : 1;
     }
     get activeStage() {
-        if (this.status === "GROUP_STAGE") {
-            return this.groupStage;
-        }
-        if (this.status === "KNOCKOUT_STAGE") {
-            return this.knockoutStage;
-        }
-        return null;
+        return this.status === "GROUP_STAGE" ? this.groupStage : this.status === "KNOCKOUT_STAGE" ? this.knockoutStage : null;
     }
     createGroups(playerIds) {
-        if (!Array.isArray(playerIds)) {
-            throw new Error(
-                "playerIds must be an array."
-            );
-        }
-        if (playerIds.length !== this.playersNumber) {
-            throw new Error(
-                `Expected ${this.playersNumber} players but received ${playerIds.length}.`
-            );
-        }
-        const uniquePlayers =
-            new Set(playerIds);
-        if (
-            uniquePlayers.size !== playerIds.length
-        ) {
-            throw new Error(
-                "Duplicate players are not allowed."
-            );
-        }
-        const groups = {
-            A: [],
-            B: [],
-            C: [],
-            D: []
-        };
-        const groupNames =
-            Object.keys(groups);
-        playerIds.forEach(
-            (playerId, index) => {
-                const groupIndex =
-                    index % groupNames.length;
-                const groupName =
-                    groupNames[groupIndex];
-                groups[groupName].push(
-                    playerId
-                );
-            }
-        );
-        this.groupMap = groups;
-        return this.groupMap;
+        if (!Array.isArray(playerIds) || playerIds.length !== this.playersNumber) throw new Error(`Expected ${this.playersNumber} players.`);
+        if (new Set(playerIds).size !== playerIds.length) throw new Error("Duplicate players are not allowed.");
+        const groups = { A: [], B: [], C: [], D: [] };
+        const keys = Object.keys(groups);
+        playerIds.forEach((id, idx) => groups[keys[idx % keys.length]].push(id));
+        return this.groupMap = groups;
     }
     startGroupStage(playerIds) {
-        if (this.status !== "GROUP_STAGE") {
-            throw new Error(
-                "This tournament does not start with the group stage."
-            );
-        }
-        const groupMap =this.createGroups(playerIds);
-        this.groupStage =
-            new GroupStage(groupMap);
-        return this.groupStage;
+        if (this.status !== "GROUP_STAGE") throw new Error("Tournament does not start with group stage.");
+        return this.groupStage = new GroupStage(this.createGroups(playerIds));
     }
     startKnockoutStage(playerIds) {
-        if (this.status !== "KNOCKOUT_STAGE") {
-            throw new Error(
-                "This tournament does not start directly in the knockout stage."
-            );
-        }
-        if (!Array.isArray(playerIds)) {
-            throw new Error(
-                "playerIds must be an array."
-            );
-        }
-        if (playerIds.length !== this.playersNumber) {
-            throw new Error(
-                `Expected ${this.playersNumber} players but received ${playerIds.length}.`
-            );
-        }
-        this.knockoutStage =
-            new KnockoutManager(playerIds);
-        this.knockoutStage.start();
-        return this.knockoutStage;
+        if (this.status !== "KNOCKOUT_STAGE") throw new Error("Tournament does not start in knockout stage.");
+        if (!Array.isArray(playerIds) || playerIds.length !== this.playersNumber) throw new Error(`Expected ${this.playersNumber} players.`);
+        return (this.knockoutStage = new KnockoutManager(playerIds)).start();
     }
     start(playerIds) {
-        if (!Array.isArray(playerIds)) {
-            throw new Error(
-                "playerIds must be an array."
-            );
-        }
-        if (this.status === "GROUP_STAGE") {
-            return this.startGroupStage(
-                playerIds
-            );
-        }
-        if (this.status === "KNOCKOUT_STAGE") {
-            return this.startKnockoutStage(
-                playerIds
-            );
-        }
+        if (!Array.isArray(playerIds)) throw new Error("playerIds must be an array.");
+        return this.status === "GROUP_STAGE" ? this.startGroupStage(playerIds) : this.startKnockoutStage(playerIds);
     }
-    recordGroupMatch(
-        fixtureId,
-        homeGoals,
-        awayGoals
-    ) {
-        if (
-            this.status !== "GROUP_STAGE"
-        ) {
-            throw new Error(
-                "The tournament is not currently in the group stage."
-            );
-        }
-        if (!this.groupStage) {
-            throw new Error(
-                "The group stage has not been started."
-            );
-        }
-        return this.groupStage.recordMatch(
-            fixtureId,
-            homeGoals,
-            awayGoals
-        );
+    recordGroupMatch(fixtureId, homeGoals, awayGoals) {
+        if (this.status !== "GROUP_STAGE" || !this.groupStage) throw new Error("Tournament is not in group stage.");
+        return this.groupStage.recordMatch(fixtureId, homeGoals, awayGoals);
     }
     advanceToKnockouts() {
-        if (
-            this.status !== "GROUP_STAGE"
-        ) {
-            throw new Error(
-                "The tournament is not in the group stage."
-            );
-        }
-        if (!this.groupStage) {
-            throw new Error(
-                "The group stage has not been started."
-            );
-        }
-        if (!this.groupStage.isComplete()) {
-            throw new Error(
-                "Cannot advance. The group stage still has pending fixtures."
-            );
-        }
-        const qualifiedPlayerIds =
-            this.groupStage.getQualifiers(
-                this.advanceCount
-            );
-        this.knockoutStage =
-            new KnockoutManager(
-                qualifiedPlayerIds
-            );
-        this.status ="KNOCKOUT_STAGE";
-        this.knockoutStage.start();
-        return this.knockoutStage;
+        if (this.status !== "GROUP_STAGE" || !this.groupStage) throw new Error("Tournament is not in group stage.");
+        if (!this.groupStage.isComplete()) throw new Error("Group stage still has pending fixtures.");
+        this.knockoutStage = new KnockoutManager(this.groupStage.getQualifiers(this.advanceCount));
+        this.status = "KNOCKOUT_STAGE";
+        return this.knockoutStage.start();
     }
     getGroupMap() {
-        if (!this.groupMap) {
-            return null;
-        }
-        return {
-            A: [...this.groupMap.A],
-            B: [...this.groupMap.B],
-            C: [...this.groupMap.C],
-            D: [...this.groupMap.D]
-        };
+        return this.groupMap ? { A: [...this.groupMap.A], B: [...this.groupMap.B], C: [...this.groupMap.C], D: [...this.groupMap.D] } : null;
     }
     getGroupStandings(groupName) {
-        if (!this.groupStage) {
-            throw new Error(
-                "The group stage has not been started."
-            );
-        }
-        return this.groupStage.getGroupStandings(
-            groupName
-        );
+        if (!this.groupStage) throw new Error("Group stage not started.");
+        return this.groupStage.getGroupStandings(groupName);
     }
     getAllStandings() {
-        if (!this.groupStage) {
-            throw new Error(
-                "The group stage has not been started."
-            );
-        }
+        if (!this.groupStage) throw new Error("Group stage not started.");
         return this.groupStage.getAllStandings();
     }
     getGroupFixtures(groupName) {
-        if (!this.groupStage) {
-            throw new Error(
-                "The group stage has not been started."
-            );
-        }
-        return this.groupStage.getFixtures({
-            group: groupName
-        });
+        if (!this.groupStage) throw new Error("Group stage not started.");
+        return this.groupStage.getFixtures({ group: groupName });
     }
     getCurrentFixtures() {
-        if (!this.activeStage) {
-            return [];
-        }
-        if (
-            this.status === "GROUP_STAGE"
-        ) {
-            return this.groupStage.getFixtures({
-                status: "PENDING"
-            });
-        }
-        if (
-            this.status === "KNOCKOUT_STAGE"
-        ) {
-            return this.knockoutStage.getCurrentFixtures();
-        }
-        return [];
+        if (!this.activeStage) return [];
+        return this.status === "GROUP_STAGE" ? this.groupStage.getFixtures({ status: "PENDING" }) : this.knockoutStage.getCurrentFixtures();
     }
     getSummary() {
         return {
-            playersNumber:
-                this.playersNumber,
-            currentStatus:
-                this.status,
-            advanceCount:
-                this.advanceCount,
-            groupMap:
-                this.groupMap,
-            groupStageStarted:
-                this.groupStage !== null,
-            groupStageFinished:
-                this.groupStage
-                    ? this.groupStage.isComplete()
-                    : false,
-            knockoutStageStarted:
-                this.knockoutStage !== null,
-            activeMatches:
-                this.getCurrentFixtures()
+            playersNumber: this.playersNumber, currentStatus: this.status, advanceCount: this.advanceCount,
+            groupMap: this.groupMap, groupStageStarted: !!this.groupStage,
+            groupStageFinished: this.groupStage ? this.groupStage.isComplete() : false,
+            knockoutStageStarted: !!this.knockoutStage, activeMatches: this.getCurrentFixtures()
         };
     }
 }

@@ -5,6 +5,7 @@ let allMatches = [];
 let allStandings = [];
 let selectedGroup = null;
 let currentFixture = null;
+let adminTargetFixture = null;
 
 // DOM ELEMENTS
 const fixtureTournamentName = document.getElementById("fixtureTournamentName");
@@ -39,19 +40,26 @@ function goToPlayerPage(playerId) {
     if (currentTournamentId) {
         localStorage.setItem("tournamentId", currentTournamentId);
     }
+    localStorage.setItem("playerReturnPage","fixtures.html"+  window.location.search);
     window.location.href = `player.html?playerId=${playerId}&tournamentId=${currentTournamentId || ''}`;
 }
-
-function createPlayerLink(playerId, playerName, cssClass = "") {
+function createPlayerLink(playerId, playerName, cssClass = "", anchorHash = null) {
     if (!playerId) return escapeHtml(playerName || "Unknown");
-    const safeName = escapeHtml(playerName || `Player ${playerId}`);
+    const safeName = escapeHtml(playerName || `Player ${playerName || playerId}`);
+    let hashString= "";
+    if (anchorHash){
+        hashString = `#${anchorHash.startsWith('standings-row-') || anchorHash.startsWith('fixture-') ? anchorHash : 'fixture-' + anchorHash}`;
+    }
     return `<a href="player.html?playerId=${playerId}&tournamentId=${currentTournamentId || ''}" 
                class="player-link ${cssClass}" 
-               onclick="event.stopPropagation(); localStorage.setItem('currentPlayerId', ${playerId}); if(${currentTournamentId}) localStorage.setItem('tournamentId', ${currentTournamentId});"
+               onclick="event.stopPropagation(); 
+                        localStorage.setItem('currentPlayerId', ${playerId}); 
+                        if(${currentTournamentId}) localStorage.setItem('tournamentId', ${currentTournamentId}); 
+                        localStorage.setItem('playerReturnPage', 'fixtures.html${hashString}');"
                style="cursor: pointer; text-decoration: underline; color: inherit;">
-               ${safeName}
+               ${escapeHtml(playerName)}
             </a>`;
-}
+    }
 
 // INITIALIZE
 document.addEventListener("DOMContentLoaded", () => {
@@ -60,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
     loadTournament();
+    scrollToCurrentHash();
 });
 
 // LOAD TOURNAMENT
@@ -225,6 +234,8 @@ function renderGroupFixtures() {
 function createGroupFixtureCard(fixture) {
     const card = document.createElement("div");
     card.className = "fixture-card";
+    card.id = `fixture-${fixture.fixture_code}`;
+    const isAdmin = checkIsAdmin();
     const completed = fixture.status === "completed";
     const cancelled = fixture.status === "cancelled";
     let score = "vs";
@@ -239,10 +250,11 @@ function createGroupFixtureCard(fixture) {
             </span>
         </div>
         <div class="fixture-players">
-            <span class="fixture-player">${createPlayerLink(fixture.player_1_id, fixture.player_1_name)}</span>
+            <span class="fixture-player">${createPlayerLink(fixture.player_1_id, fixture.player_1_name,"",fixture.fixture_code)}</span>
             <span class="vs">${completed || cancelled ? score : "VS"}</span>
-            <span class="fixture-player right">${createPlayerLink(fixture.player_2_id, fixture.player_2_name)}</span>
+            <span class="fixture-player right">${createPlayerLink(fixture.player_2_id, fixture.player_2_name,"",fixture.fixture_code)}</span>
         </div>
+        
         ${completed || cancelled ? "" : `
             <div class="fixture-actions">
                 <button type="button" class="button primary-button" data-fixture-id="${fixture.fixture_code}">
@@ -250,10 +262,18 @@ function createGroupFixtureCard(fixture) {
                 </button>
             </div>
         `}
+        ${completed && isAdmin ? `
+                <button type="button" class="button btn-warning" data-admin-fix="${fixture.fixture_code}" style="font-size: 0.8rem;">
+                    Admin Override
+                </button>
+            ` : ''}
+        ${renderOverrideHistoryHTML(fixture.overrides)}
     `;
     const resultButton = card.querySelector("[data-fixture-id]");
     if (resultButton) {
         resultButton.addEventListener("click", () => openGroupResultModal(fixture));
+    }const adminFixButton = card.querySelector("[data-admin-fix]");if (adminFixButton) {
+        adminFixButton.addEventListener("click", () => openAdminOverrideModal(fixture));
     }
     return card;
 }
@@ -300,10 +320,11 @@ function renderStandings() {
             const position = index + 1;
             const qualified = position <= qualifiedPerGroup;
             const row = document.createElement("tr");
+            row.id = `standings-row-${group}-${player.player_id}`;
             row.classList.add(qualified ? "qualified-player" : "eliminated-player");
             row.innerHTML = `
                 <td class="position">${position}</td>
-                <td><strong>${createPlayerLink(player.player_id, player.username)}</strong></td>
+                <td><strong>${createPlayerLink(player.player_id, player.username,"",row.id)}</strong></td>
                 <td>${player.matches_played ?? 0}</td>
                 <td>${player.wins ?? 0}</td>
                 <td>${player.draws ?? 0}</td>
@@ -441,21 +462,89 @@ resultForm.addEventListener("submit", async event => {
     }
 });
 
+
+// CHECK ROUND COMPLETION AND SHOW POPUP MODAL
+function checkRoundCompletionAndPrompt(matches) {
+    const currentRound = getCurrentKnockoutRound(matches);
+    if (!currentRound) return;
+
+    // Do not show prompt or advance if the current round is the final match
+    const roundLower = currentRound.toLowerCase().trim();
+    if (roundLower === "final" || roundLower === "finals") return;
+
+    const currentRoundMatches = matches.filter(
+        match => (match.round_name || `Round ${match.round_number}`) === currentRound
+    );
+    const allCompleted = currentRoundMatches.length > 0 && currentRoundMatches.every(match => match.status === "completed");
+    
+    // Check if modal already exists to prevent duplicate popups
+    if (allCompleted && !document.getElementById("roundCompleteModal")) {
+        showRoundCompleteModal(currentRound);
+    }
+}
+
+// POPUP MODAL MATCHING DELETE/RESULT STYLING
+function showRoundCompleteModal(roundName) {
+    // Reusing standard modal structure (.modal, .modal-content, .hidden classes if applicable)
+    const modalHtml = `
+        <div id="roundCompleteModal" class="modal" style="display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+            <div class="modal-content" style="background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 100%; text-align: center;">
+                <h3>${escapeHtml(roundName)} Completed!</h3>
+                <p style="margin: 15px 0; color: #555;">All matches in this round are finished. Would you like to review/override any results or proceed to the next stage?</p>
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                    <button type="button" class="button secondary-button" onclick="document.getElementById('roundCompleteModal').remove()">Cancel / Review</button>
+                    <button type="button" class="button primary-button" onclick="executeAdvanceRound()">Advance to Next Round</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+async function executeAdvanceRound() {
+    try {
+        const btn = document.querySelector("#roundCompleteModal .primary-button");
+        if (btn) btn.disabled = true;
+        
+        await apiRequest(`${API_URL}/${currentTournamentId}/knockout/advance`, "POST");
+        showMessage("Knockout round advanced successfully.");
+        document.getElementById("roundCompleteModal")?.remove();
+        await loadTournament();
+    } catch (error) {
+        showMessage(error.message, "error");
+        const btn = document.querySelector("#roundCompleteModal .primary-button");
+        if (btn) btn.disabled = false;
+    }
+}
+
+
 // SUBMIT GROUP RESULT
 async function submitGroupResult() {
     const homeGoals = Number(player1Score.value);
     const awayGoals = Number(player2Score.value);
+    const screenshotInput = document.getElementById("matchScreenshot");
     if (!Number.isInteger(homeGoals) || !Number.isInteger(awayGoals) || homeGoals < 0 || awayGoals < 0) {
         throw new Error("Scores must be valid non-negative numbers.");
+    }
+    const fixtureCode = currentFixture?.fixture_code;
+    const formData = new FormData();
+    formData.append("homeGoals", homeGoals);
+    formData.append("awayGoals", awayGoals);
+    if(screenshotInput && screenshotInput.files.length > 0) {
+        formData.append("screenshot", screenshotInput.files[0]);
     }
     await apiRequest(
         `${API_URL}/${currentTournamentId}/group/matches/${encodeURIComponent(currentFixture.fixture_code)}`,
         "PATCH",
-        { homeGoals, awayGoals }
+        formData
     );
     closeModal();
     showMessage("Match result recorded successfully.");
     await loadTournament();
+    if (fixtureCode) {
+        window.location.hash = `fixture-${fixtureCode}`;
+        scrollToCurrentHash();
+    }
 }
 
 // SUBMIT KNOCKOUT RESULT
@@ -463,18 +552,32 @@ async function submitKnockoutResult() {
     const p1Goals = Number(player1Score.value);
     const p2Goals = Number(player2Score.value);
     let penaltyWinnerId = null;
+    const screenshotInput = document.getElementById("matchScreenshot");
     if (p1Goals === p2Goals) {
         penaltyWinnerId = Number(penaltyWinner.value);
         if (!penaltyWinnerId) throw new Error("Please select the penalty winner.");
     }
+    const fixtureCode = currentFixture?.fixture_code;
+    const formData = new FormData();
+    formData.append("p1Goals", p1Goals);
+    formData.append("p2Goals", p2Goals);
+    formData.append("penaltyWinnerId", penaltyWinnerId);
+    if(screenshotInput && screenshotInput.files.length > 0) {
+        formData.append("screenshot", screenshotInput.files[0]);
+    }
+
     await apiRequest(
         `${API_URL}/${currentTournamentId}/knockout/matches/${encodeURIComponent(currentFixture.fixture_code)}`,
         "PATCH",
-        { p1Goals, p2Goals, penaltyWinnerId }
+        formData
     );
     closeModal();
     showMessage("Knockout result recorded successfully.");
     await loadTournament();
+    if (fixtureCode) {
+        window.location.hash = `fixture-${fixtureCode}`;
+        scrollToCurrentHash();
+    }
 }
 
 // CLOSE MODAL
@@ -518,40 +621,62 @@ function renderKnockoutStage() {
         matches.forEach(match => round.appendChild(createKnockoutCard(match)));
         knockoutFixturesContainer.appendChild(round);
     });
+    checkRoundCompletionAndPrompt(knockoutMatches);
     renderKnockoutAdvanceButton(knockoutMatches);
+    renderTournamentComplete();
 }
 
 // KNOCKOUT CARD (WITH CLICKABLE PLAYERS)
 function createKnockoutCard(match) {
     const card = document.createElement("div");
     card.className = "knockout-match";
+    card.id = `fixture-${match.fixture_code}`;
     const completed = match.status === "completed";
     let p1Score = completed ? match.player_1_score : "";
     let p2Score = completed ? match.player_2_score : "";
+    const isAdmin = checkIsAdmin();
+    const cancelled= match.status==="Cancelled";
     
     card.innerHTML = `
-        <div class="knockout-player ${completed && Number(match.winner_id) === Number(match.player_1_id) ? "winner" : ""}">
-            <span>${createPlayerLink(match.player_1_id, match.player_1_name)}</span>
-            <strong>${p1Score}</strong>
-        </div>
-        <div class="knockout-player ${completed && Number(match.winner_id) === Number(match.player_2_id) ? "winner" : ""}">
-            <span>${createPlayerLink(match.player_2_id, match.player_2_name)}</span>
-            <strong>${p2Score}</strong>
-        </div>
         ${completed ? `
             <div class="fixture-status">
                 <span class="badge badge-completed">Completed</span>
-            </div>
-        ` : `
+            </div>`:`
+            <span class="badge ${cancelled ? "badge-danger" : "badge-group"}">
+                ${cancelled ? "Cancelled" : "Scheduled"}
+            </span>
+            `}
+        <div class="knockout-player ${completed && Number(match.winner_id) === Number(match.player_1_id) ? "winner" : ""}">
+            <span>${createPlayerLink(match.player_1_id, match.player_1_name,"",match.fixture_code)}</span>
+            <strong>${p1Score}</strong>
+        </div>
+        <div class="knockout-player ${completed && Number(match.winner_id) === Number(match.player_2_id) ? "winner" : ""}">
+            <span>${createPlayerLink(match.player_2_id, match.player_2_name,"",match.fixture_code)}</span>
+            <strong>${p2Score}</strong>
+        </div>
+        
+        ${completed ?"": `
             <div class="fixture-actions">
                 <button type="button" class="button primary-button">Enter Result</button>
             </div>
         `}
+        
+        ${completed && isAdmin ? `
+    <div class="fixture-actions" style="margin-top: 8px;">
+        <button type="button" class="button btn-warning" data-admin-fix="${match.fixture_code}" style="font-size: 0.8rem;">
+            Admin Override
+        </button>
+    </div>
+` : ''}
+        ${renderOverrideHistoryHTML(match.overrides)}
     `;
     if (!completed) {
         const button = card.querySelector("button");
         button.addEventListener("click", () => openKnockoutResultModal(match));
-    }
+    }const adminFixBtn = card.querySelector("[data-admin-fix]");
+if (adminFixBtn) {
+    adminFixBtn.addEventListener("click", () => openAdminOverrideModal(match));
+}
     return card;
 }
 
@@ -628,23 +753,79 @@ function renderTournamentComplete() {
     ) || knockoutMatches[knockoutMatches.length - 1];
 
     if (finalMatch && finalMatch.winner_id) {
+        if(finalMatch.round_name.toLowerCase().includes("semi")&& !finalMatch.round_name.toLowerCase()==="final"){
+            championName.textContent = "-";
+            return;
+        }
         const winnerId = finalMatch.winner_id;
         const winnerName = Number(winnerId) === Number(finalMatch.player_1_id)
             ? finalMatch.player_1_name || `Player ${finalMatch.player_1_id}`
             : finalMatch.player_2_name || `Player ${finalMatch.player_2_id}`;
         championName.innerHTML = createPlayerLink(winnerId, winnerName);
-    } else {
-        championName.textContent = "-";
-    }
+        currentTournament.status="completed";
+    } 
 }
 
-// ESCAPE HTML
-function escapeHtml(value) {
-    if (value === null || value === undefined) return "";
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+function openAdminOverrideModal(fixture) {
+    adminTargetFixture = fixture;
+    document.getElementById("adminFixtureCode").value = fixture.fixture_code;
+    document.getElementById("adminPlayer1Name").textContent = fixture.player_1_name || `Player ${fixture.player_1_id}`;
+    document.getElementById("adminPlayer2Name").textContent = fixture.player_2_name || `Player ${fixture.player_2_id}`;
+    document.getElementById("adminPlayer1Score").value = fixture.player_1_score ?? 0;
+    document.getElementById("adminPlayer2Score").value = fixture.player_2_score ?? 0;
+    
+    document.getElementById("adminOverrideModal").classList.remove("hidden");
+    const navigate = document.getElementById("adminOverrideModal");
+     if (navigate) {
+                navigate.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+    
 }
+
+// Close listeners
+document.getElementById("closeAdminModal").addEventListener("click", closeAdminModal);
+document.getElementById("cancelAdminButton").addEventListener("click", closeAdminModal);
+
+function closeAdminModal() {
+    document.getElementById("adminOverrideModal").classList.add("hidden");
+    adminTargetFixture = null;
+    document.getElementById("adminOverrideForm").reset();
+}
+
+// Submit Override
+document.getElementById("adminOverrideForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!adminTargetFixture) return;
+
+    const homeGoals = Number(document.getElementById("adminPlayer1Score").value);
+    const awayGoals = Number(document.getElementById("adminPlayer2Score").value);
+    const screenshotFile = document.getElementById("adminMatchScreenshot").files[0];
+    const fixtureCode = adminTargetFixture.fixture_code;
+    const formData = new FormData();
+    formData.append("homeGoals", homeGoals);
+    formData.append("awayGoals", awayGoals);
+    if (screenshotFile) {
+        formData.append("screenshot", screenshotFile);
+    }
+
+    try {
+        await apiRequest(
+            `${API_URL}/${currentTournamentId}/admin/matches/${encodeURIComponent(adminTargetFixture.fixture_code)}`,
+            "PATCH",
+            formData
+        );
+        closeAdminModal();
+        showMessage("Match score corrected successfully by admin.");
+        await loadTournament();
+        if (fixtureCode) {
+            window.location.hash = `fixture-${fixtureCode}`;
+            scrollToCurrentHash();
+        }
+    } catch (error) {
+        showMessage(error.message, "error");
+        closeAdminModal();
+    }
+    
+});
+

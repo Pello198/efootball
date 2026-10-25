@@ -7,24 +7,12 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header class="header">
-        <div class="header-container">
-            <div class="logo">
-                <h1>🏆 Tournament Manager</h1>
-            </div>
-            <nav class="navigation">
-                <a href="index.html" class="nav-link">Tournament</a>
-                <a href="fixtures.html" class="nav-link">Fixtures</a>
-            </nav>
-        </div>
-    </header>
+    <div id="header-placeholder"></div>
 
     <main class="main-container">
-        <section class="card tournament-section" id="tournamentSection">
-            <div class="section-header">
-                <h2>Tournament Information</h2>
-            </div>
-            <form id="createTournamentForm" class="form">
+        <section class="tournament-section" id="tournamentSection">
+           
+            <form id="createTournamentForm" class="card">
                 <div class="form-group">
                     <label for="tournamentName">Tournament Name</label>
                     <input type="text" id="tournamentName" name="tournamentName" placeholder="Enter tournament name" required>
@@ -67,13 +55,12 @@
                     <span class="info-label">Tournament Status:</span>
                     <span class="status-badge" id="displayTournamentStatus">Registration</span>
                 </div>
-                <div class="tournament-actions">
-                    <a href="fixtures.html" id="viewFixturesButton" class="btn btn-secondary">View Fixtures</a>
-                </div>
+               
             </div>
+            
         </section>
-
-        <section class="card register-player-section" id="registerPlayerSection">
+        
+        <section class="card" id="registerPlayerSection">
             <div class="section-header">
                 <h2>Register Player</h2>
             </div>
@@ -91,18 +78,19 @@
         </section>
 
         <section class="card players-section" id="playersSection">
+            <div class="scrollable-card-container">
             <div class="section-header">
                 <h2>Registered Players</h2>
                 <span class="player-count" id="playerCount">0 Players</span>
             </div>
-            <div class="table-container" id="playersTableContainer">
+            <div class="table-container " id="playersTableContainer">
                 <table class="players-table">
-                    <thead>
+                    <thead class="fixated">
                         <tr>
-                            <th>#</th>
-                            <th>Player</th>
-                            <th>Number</th>
-                            <th>Profile</th>
+                            <th >#</th>
+                            <th >Player</th>
+                            <th >Number</th>
+                            <th >Profile</th>
                         </tr>
                     </thead>
                     <tbody id="playersTableBody">
@@ -111,9 +99,11 @@
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </div></div>
         </section>
-
+        <section class="tournament-actions">
+            <a href="fixtures.html" id="viewFixturesButton" class="btn btn-secondary">View Fixtures</a>
+        </section>
         <section class="card start-section" id="startTournamentSection">
             <div class="section-header">
                 <h2>Start Tournament</h2>
@@ -123,6 +113,17 @@
         </section>
 
         <div id="messageContainer" class="message-container"></div>
+        <!-- Custom Confirmation Modal -->
+<div id="customConfirmModal" class="modal-overlay " style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+    <div class="modal-card" style="background: #fff; padding: 25px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <h3 id="modalTitle" style="margin-top: 0; color: #333;">Confirm Action</h3>
+        <p id="modalMessage" style="color: #555; margin: 15px 0 20px 0;">Are you sure?</p>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" id="modalCancelBtn" class="button secondary-button" style="padding: 8px 16px;">Cancel</button>
+            <button type="button" id="modalConfirmBtn" class="button btn-danger" style="padding: 8px 16px;">Confirm</button>
+        </div>
+    </div>
+</div>
     </main>
 
     <script src="js/api.js"></script>
