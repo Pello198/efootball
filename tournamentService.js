@@ -1,7 +1,7 @@
 const TournamentManager = require("./classes/tournamentManager");
 const GroupStage = require("./classes/groupStage");
 const KnockoutManager = require("./classes/knockoutStage");
-const dao = require("./tournamentDao");
+const dao = require("./tournamentDAO");
 class TournamentService {
     constructor() { this.tournaments = new Map(); }
     async createTournament(name, maxPlayers = 20) {
