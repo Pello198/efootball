@@ -63,13 +63,15 @@ function createPlayerLink(playerId, playerName, cssClass = "", anchorHash = null
 
 // INITIALIZE
 document.addEventListener("DOMContentLoaded", () => {
+    fetchfiles();
     if (!currentTournamentId) {
         showMessage("No tournament selected.", "error");
         return;
     }
+    
     loadTournament();
     scrollToCurrentHash();
-    fetchfiles();
+    
 });
 
 // LOAD TOURNAMENT

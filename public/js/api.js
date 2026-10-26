@@ -62,47 +62,40 @@ async function apiRequest(url, method = "GET", body = null) {
     }
     return data;
 }
- function updateNavigationAuth() {
-    const token = localStorage.getItem("token");
+function updateNavigationAuth() {
     const navLinks = document.querySelector(".navigation");
     if (!navLinks) return;
 
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    
-    // Check if logout or login link already exists to prevent duplication
-    if (token) {
-        if (!navLinks.querySelector("#logoutNavLink")) {
-            const authNav = document.createElement("a");
-            authNav.id = "logoutNavLink";
-            authNav.href = "#";
-            authNav.className = "nav-link";
-            authNav.textContent = `Logout (${user.username || 'User'})`;
-            authNav.onclick = (e) => {
-                e.preventDefault();
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
-                localStorage.removeItem("currentPlayerId");
-                window.location.href = "auth.html";
-            };
-            
-            // Replace the auth.html link if it exists, otherwise append it
-            const loginLink = navLinks.querySelector('a[href="auth.html"]');
-            if (loginLink) {
-                loginLink.replaceWith(authNav);
-            } else {
-                navLinks.appendChild(authNav);
-            }
-        }
-    } else {
-        // Ensure the Login/Register link exists if not logged in
-        if (!navLinks.querySelector('a[href="auth.html"]')) {
-            const loginNav = document.createElement("a");
-            loginNav.href = "auth.html";
-            loginNav.className = "nav-link";
-            loginNav.textContent = "Login / Register";
-            navLinks.appendChild(loginNav);
-        }
+    // Remove any existing auth links first to prevent duplication bugs
+    const existingAuthLink = navLinks.querySelector("#dynamicAuthLink");
+    if (existingAuthLink) {
+        existingAuthLink.remove();
     }
+
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const authNav = document.createElement("a");
+    authNav.id = "dynamicAuthLink";
+    authNav.className = "nav-link";
+
+    if (token) {
+        // Logged-in state: Show Logout with username
+        authNav.href = "#";
+        authNav.textContent = `Logout (${user.username || 'User'})`;
+        authNav.onclick = (e) => {
+            e.preventDefault();
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("currentPlayerId");
+            window.location.href = "auth.html";
+        };
+    } else {
+        // Logged-out state: Show Login / Register toggle link
+        authNav.href = "auth.html";
+        authNav.textContent = "Login / Register";
+    }
+
+    navLinks.appendChild(authNav);
 }
 // Check if current logged-in user is an admin
 function checkIsAdmin() {
