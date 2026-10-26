@@ -1,4 +1,4 @@
-const API_URL=import.meta.env.VITE_API_URL;
+const API_URL="https://efootball-87pw.onrender.com"
 
 // SHOW MESSAGE
 
