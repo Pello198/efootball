@@ -9,7 +9,7 @@ const upload = multer({ storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, path.join(__dirname, 'public/uploads/')),
     filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
 })});
-app.use(cors(), express.json(), express.static(path.join(__dirname, "public")));
+app.use(cors(), express.json());
 app.use("/tournaments", tournamentRoutes);
 app.use("/", tournamentRoutes);
 const PORT= process.env.PORT;
