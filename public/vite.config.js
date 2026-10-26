@@ -1,26 +1,19 @@
-import { defineConfig } from 'vite'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
-  // Directs Vite to treat the 'public' folder as the frontend root
-  root: 'public',
-  
   build: {
-    // Outputs the production build to a 'dist' folder in your project root
-    outDir: '../dist',
-    emptyOutDir: true,
-    
-    // If you have multiple HTML files, declare them here so Vite bundles them all
     rollupOptions: {
       input: {
-        main: resolve(__dirname, '/index.html'),
-        auth: resolve('./auth.html'),
-        fixtures: resolve(__dirname,'./fixtures.html'),
-        header:resolve(__dirname,'./header.html'),
-        fixtures: resolve(__dirname,'./player.html')
-      
-        
-      }
-    }
-  }
-})
+        main: resolve(__dirname, 'index.html'),
+        auth: resolve(__dirname, 'auth.html'),
+        fixtures: resolve(__dirname, 'fixtures.html'),
+        tournament: resolve(__dirname, 'player.html'), // This fixes the tournament.js 404!
+      },
+    },
+  },
+});
