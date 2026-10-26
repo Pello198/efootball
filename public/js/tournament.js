@@ -19,6 +19,7 @@ const availablePlayersList = document.getElementById("availablePlayersList");
 
 // PAGE LOAD
 document.addEventListener("DOMContentLoaded", async () => {
+    fetchfiles();
     console.log("Tournament page loaded");
     console.log("API URL:", API_URL);
     const isAdmin = checkIsAdmin();

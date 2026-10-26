@@ -62,7 +62,7 @@ async function apiRequest(url, method = "GET", body = null) {
     }
     return data;
 }
-function updateNavigationAuth() {
+ function updateNavigationAuth() {
     const token = localStorage.getItem("token");
     const navLinks = document.querySelector(".navigation");
     if (!navLinks) return;
@@ -113,7 +113,8 @@ function checkIsAdmin() {
     } catch (e) {
         return false;
     }
-}function renderOverrideHistoryHTML(overrides) {
+}
+function renderOverrideHistoryHTML(overrides) {
     if (!overrides || !overrides.length) return "";
     
     const historyItems = overrides.map(ov => `
@@ -142,7 +143,7 @@ function openScreenshotModal(imgUrl) {
     document.getElementById("modalScreenshotImg").src = imgUrl;
     modal.style.display = "flex";
 }
-window.openScreenshotModal = openScreenshotModal;
+
 function formatStatus(status) {
     const statusMap = {
         registration: "Registration",
@@ -152,7 +153,7 @@ function formatStatus(status) {
     };
     return statusMap[status] || status || "Registration";
 }// ESCAPE HTML HELPER
-function escapeHtml(value) {
+ function escapeHtml(value) {
     if (value === null || value === undefined) return "";
     return String(value)
         .replace(/&/g, "&amp;")
@@ -161,7 +162,7 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
-function setupNavigation() {
+ function setupNavigation() {
     const backButton = document.getElementById("backButton");
     if (backButton) {
         backButton.addEventListener("click", () => {
@@ -178,7 +179,7 @@ function setupNavigation() {
     }
 }
 // Add this helper function to your tournament script
-function scrollToCurrentHash() {
+ function scrollToCurrentHash() {
     if (window.location.hash) {
         setTimeout(() => {
             const targetElement = document.querySelector(window.location.hash);
@@ -194,7 +195,7 @@ function scrollToCurrentHash() {
     }
 }
 function fetchfiles(){
-    fetch('header.html')
+    fetch('/header.html')
             .then(response => response.text())
             .then(data => {
                 const placeholder=document.getElementById('header-placeholder')
@@ -205,4 +206,16 @@ function fetchfiles(){
             })
             .catch(error => console.error('Error loading header:', error));
 }
-fetchfiles();
+
+window.API_URL = API_URL;
+window.apiRequest=apiRequest
+window.showMessage = showMessage;
+window.fetchfiles = fetchfiles;
+window.scrollToCurrentHash = scrollToCurrentHash;
+window.escapeHtml= escapeHtml;
+window.formatStatus = formatStatus;
+window.openScreenshotModal=openScreenshotModal;
+window.setupNavigation=setupNavigation;
+window.checkIsAdmin=checkIsAdmin;
+window.updateNavigationAuth=updateNavigationAuth;
+window.renderOverrideHistoryHTML=renderOverrideHistoryHTML;

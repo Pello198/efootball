@@ -69,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     loadTournament();
     scrollToCurrentHash();
+    fetchfiles();
 });
 
 // LOAD TOURNAMENT

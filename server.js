@@ -11,5 +11,9 @@ const upload = multer({ storage: multer.diskStorage({
 })});
 app.use(cors(), express.json(), express.static(path.join(__dirname, "public")));
 app.use("/tournaments", tournamentRoutes);
+app.use("/", tournamentRoutes);
 const PORT= process.env.PORT;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+ 

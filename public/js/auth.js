@@ -1,4 +1,7 @@
 // Tab Switching Logic
+document.addEventListener("DOMContentLoaded",async()=>{
+    fetchfiles();
+});
 function switchTab(tab) {
     const loginSection = document.getElementById("loginSection");
     const registerSection = document.getElementById("registerSection");

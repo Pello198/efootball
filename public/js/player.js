@@ -11,6 +11,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     setupNavigation();
     setupStatClickFilters();
     await initPlayerPage();
+    fetchfiles();
  
 });
 
